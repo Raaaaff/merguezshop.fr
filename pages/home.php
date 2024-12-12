@@ -18,16 +18,23 @@ $articles = $query->fetchAll(PDO::FETCH_ASSOC);
 <body>
     <!-- En-tête -->
     <header>
-        <div class="logo">
-            <h1>MerguezShop</h1>
+        <div class="top-bar">
+            <div class="logo">
+                <h1>MerguezShop</h1>
+            </div>
+            <form class="search-bar" action="search.php" method="GET">
+                <input type="text" name="query" placeholder="Rechercher un produit..." required>
+                <button type="submit">Rechercher</button>
+            </form>
+            <nav>
+                <ul>
+                    <li><a href="home.php">Accueil</a></li>
+                    <li><a href="login.php">Se connecter</a></li>
+                    <li><a href="profile.php">Mon Profil</a></li>
+                    <li><a href="sale.php">Vente</a></li>
+                </ul>
+            </nav>
         </div>
-        <nav>
-            <ul>
-                <li><a href="home.php">Accueil</a></li>
-                <li><a href="login.php">Se connecter</a></li>
-                <li><a href="profile.php">Mon Profil</a></li>
-            </ul>
-        </nav>
     </header>
 
     <!-- Contenu principal -->
@@ -38,9 +45,9 @@ $articles = $query->fetchAll(PDO::FETCH_ASSOC);
                 <div class="article-item">
                     <img src="<?= $article['image'] ?>" alt="<?= $article['nom'] ?>" class="article-image">
                     <div class="article-details">
-                        <h3 class="article-title"><?= $article['nom'] ?></h3>
-                        <p class="article-description"><?= substr($article['description'], 0, 100) . '...' ?></p>
-                        <p class="article-price"><?= $article['prix'] ?> €</p>
+                        <h3 class="article-title"> <?= $article['nom'] ?> </h3>
+                        <p class="article-description"> <?= substr($article['description'], 0, 100) . '...' ?> </p>
+                        <p class="article-price"> <?= $article['prix'] ?> &euro; </p>
                         <a href="#" class="btn">Ajouter au panier</a>
                     </div>
                 </div>
