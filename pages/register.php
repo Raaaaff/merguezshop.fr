@@ -10,14 +10,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nom = $_POST['nom'];
     $email = $_POST['email'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-
+    
+    $photodefault = "../img/user.png";
 
     if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
         $photo = file_get_contents($_FILES['photo']['tmp_name']);
     } else {
-        $photo = null; 
+        $photo = file_get_contents($photodefault); 
     }
-
+    
     
     $sql = "INSERT INTO User (photo, username, prenom, nom, email, password, created_at, updated_at) 
             VALUES (:photo, :username, :prenom, :nom, :email, :password, NOW(), NOW())";
@@ -33,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($result) {
         $message = 'Inscription réussie!';
-        header('Location: login.php');
+        header('Location: home.php');
         exit;
     } else {
         $message = 'Erreur lors de l\'inscription.';
@@ -86,6 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="submit" value="S'inscrire">
         </div>
     </form>
+    <p>Vous avez déjà un compte ? <a href="login.php">Connexion</a></p>
 </div>
 </body>
 </html>

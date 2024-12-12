@@ -1,88 +1,67 @@
+/* register.css */
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #e9ecef;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
     margin: 0;
     padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
 }
 
-.login-container {
-    max-width: 450px;
-    width: 100%;
+.register-container {
+    width: 350px; /* Réduit la largeur du formulaire */
+    margin: 100px auto;
+    padding: 15px; /* Moins de padding pour un formulaire plus compact */
     background-color: #fff;
-    padding: 30px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-    box-sizing: border-box;
-    overflow: hidden;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    position: relative;
 }
 
 h2 {
     text-align: center;
-    margin-top: 0;
-    color: #4e4e4e;
-    font-size: 28px;
-    font-weight: bold;
-    margin-bottom: 20px;
+    margin-bottom: 15px; /* Réduit l'espacement sous le titre */
+    font-size: 20px; /* Taille du titre plus petite */
 }
 
 label {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: #6c757d;
+    display: block;
+    margin-bottom: 6px; /* Réduit l'espacement entre label et champ */
+    font-size: 12px; /* Taille des labels plus petite */
 }
 
-input[type="text"], input[type="password"], input[type="email"], input[type="file"] {
+input[type="text"], input[type="email"], input[type="password"], input[type="file"] {
     width: 100%;
-    padding: 12px;
-    margin-bottom: 16px;
+    padding: 6px; /* Moins de padding pour réduire la taille des champs */
+    margin-bottom: 10px; /* Moins d'espacement entre les champs */
     border: 1px solid #ccc;
-    border-radius: 8px;
-    font-size: 16px;
-    background-color: #f8f9fa;
-    transition: border-color 0.3s;
-}
-
-input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus, input[type="file"]:focus {
-    border-color: #007bff;
-    outline: none;
+    border-radius: 4px;
+    font-size: 12px; /* Réduit la taille du texte dans les champs */
 }
 
 input[type="submit"] {
     width: 100%;
-    background-color: #007bff;
+    padding: 8px; /* Moins de padding pour un bouton plus petit */
+    background-color: #4CAF50;
     color: white;
     border: none;
-    padding: 12px;
-    font-size: 18px;
-    font-weight: bold;
-    border-radius: 8px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.3s;
+    font-size: 14px; /* Taille du texte du bouton plus petite */
 }
 
 input[type="submit"]:hover {
-    background-color: #0056b3;
-    transform: translateY(-2px);
-}
-
-input[type="submit"]:active {
-    background-color: #004085;
-    transform: translateY(1px);
+    background-color: #45a049;
 }
 
 p {
-    color: #e74c3c;
-    font-weight: 600;
     text-align: center;
-    font-size: 16px;
-    margin-top: 20px;
+    font-size: 12px; /* Texte plus petit */
 }
 
-input[type="file"] {
-    padding: 10px 0;
+a {
+    color: #4CAF50;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
 }
