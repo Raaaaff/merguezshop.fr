@@ -29,9 +29,9 @@ $articles = $query->fetchAll(PDO::FETCH_ASSOC);
             <nav>
                 <ul>
                     <li><a href="home.php">Accueil</a></li>
-                    <li><a href="login.php">Se connecter</a></li>
-                    <li><a href="profile.php">Mon Profil</a></li>
                     <li><a href="sale.php">Vente</a></li>
+                    <li><a href="profile.php">Mon Profil</a></li>
+                    <li><a href="cart.php">🛒 Panier</a></li>
                 </ul>
             </nav>
         </div>
