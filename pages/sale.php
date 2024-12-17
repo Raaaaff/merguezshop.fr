@@ -1,80 +1,60 @@
 <?php
 include("config.php");
-
-session_start();
-
-
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
+session_start(); // Démarrer la session
 
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
     $nom = $_POST['nom'];
     $description = $_POST['description'];
     $prix = $_POST['prix'];
-    $photo = $_FILES['photos']['name'];
     $quantite = $_POST['quantite'];
-    $author_ID = 1; 
+    $author_ID = $_SESSION['user_id']; 
 
-    
+    $photos = $_FILES['photos'];
+    $photo_count = count($photos['name']);
 
-    if (isset($_FILES['photos']) && count($_FILES['photos']['name']) > 0) {
-        $photos = [];
-        foreach ($_FILES['photos']['tmp_name'] as $index => $tmpName) {
-            if ($_FILES['photos']['error'][$index] === UPLOAD_ERR_OK) {
-                $photo_content = file_get_contents($tmpName);
-                $photos[] = $photo_content;
-            }
-        }
-    } else {
-        // Si aucune photo n'est envoyée
-        $photos = [];
-    }    
+    if ($photo_count > 0 && $photo_count <= 4) {
+        $photo_content = file_get_contents($photos['tmp_name'][0]); 
 
-    // Vérifie qu'il y a au maximum 4 photos
-    if (count($photos) > 4) {
-        die("Erreur : Vous ne pouvez télécharger que 4 photos au maximum.");
-    }
-
-    // Insertion dans la table Article
-    $sql_article = "INSERT INTO Article (nom, description, prix, publish_date, author_ID) 
-                    VALUES (:nom, :description, :prix, NOW(), :author_ID)";
-    $stmt_article = $pdo->prepare($sql_article);
-    $stmt_article->execute([
-        'nom' => $nom,
-        'description' => $description,
-        'prix' => $prix,
-        'author_ID' => $author_ID
-    ]);
-
-    $article_ID = $pdo->lastInsertId(); // Récupère l'ID de l'article
-
-    // Insertion des photos dans une table séparée
-    $sql_photo = "INSERT INTO Photos (article_ID, image) VALUES (:article_ID, :image)";
-    $stmt_photo = $pdo->prepare($sql_photo);
-
-    foreach ($photos as $photo) {
-        $stmt_photo->execute([
-            'article_ID' => $article_ID,
-            'image' => $photo
+        // Insertion dans la table Article
+        $sql_article = "INSERT INTO Article (nom, description, prix, publish_date, image, author_ID) 
+                        VALUES (:nom, :description, :prix, NOW(), :image, :author_ID)";
+        $stmt_article = $pdo->prepare($sql_article);
+        $stmt_article->execute([
+            'nom' => $nom,
+            'description' => $description,
+            'prix' => $prix,
+            'image' => $photo_content,
+            'author_ID' => $author_ID
         ]);
+
+        $article_ID = $pdo->lastInsertId();
+
+        // Insertion dans la table Stock
+        $sql_stock = "INSERT INTO Stock (article_ID, quantite) VALUES (:article_ID, :quantite)";
+        $stmt_stock = $pdo->prepare($sql_stock);
+        $stmt_stock->execute([
+            'article_ID' => $article_ID,
+            'quantite' => $quantite
+        ]);
+
+        // Insertion des autres photos dans la table Photos
+        for ($i = 1; $i < $photo_count; $i++) {
+            $photo_content = file_get_contents($photos['tmp_name'][$i]);
+            $sql_photo = "INSERT INTO Photos (article_ID, image) VALUES (:article_ID, :image)";
+            $stmt_photo = $pdo->prepare($sql_photo);
+            $stmt_photo->execute([
+                'article_ID' => $article_ID,
+                'image' => $photo_content
+            ]);
+        }
+
+        $message = 'Article mis en vente avec succès !';
+    } else {
+        $message = 'Vous devez télécharger entre 1 et 4 images.';
     }
-
-    // Insertion dans la table Stock
-    $sql_stock = "INSERT INTO Stock (article_ID, quantite) VALUES (:article_ID, :quantite)";
-    $stmt_stock = $pdo->prepare($sql_stock);
-    $stmt_stock->execute([
-        'article_ID' => $article_ID,
-        'quantite' => $quantite
-    ]);
-
-    $message = 'Article mis en vente avec succès avec plusieurs photos !';
-
-    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -107,19 +87,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="number" id="prix" name="prix" required step="0.01">
         </div>
         <div class="form-group">
-            <label for="photo">Photos (max 4) :</label>
-            <input type="file" id="photo" name="photos[]" accept="image/*" multiple required>
-            <small>Vous pouvez télécharger jusqu'à 4 photos.</small>
+            <label for="photos">Photos (jusqu'à 4) :</label>
+            <input type="file" id="photos" name="photos[]" accept="image/*" multiple required>
         </div>
-        <script>
-        document.getElementById('photo').addEventListener('change', function() {
-            if (this.files.length > 4) {
-                alert("Vous ne pouvez sélectionner que 4 photos maximum.");
-                this.value = ""; // Réinitialise l'input
-            }
-        });
-        </script>
-
         <div class="form-group">
             <label for="quantite">Quantité en stock :</label>
             <input type="number" id="quantite" name="quantite" required>
