@@ -1,6 +1,8 @@
 <?php
 include("config.php");
 
+session_start();
+
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -10,21 +12,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nom = $_POST['nom'];
     $email = $_POST['email'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    
-    $photodefault = "../img/user.png";
 
+    $defaultImagePath = "../img/user.png";
+
+    // Vérification et récupération de l'image
     if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-        $photo = file_get_contents($_FILES['photo']['tmp_name']);
+        // L'utilisateur a uploadé une image
+        $photoContent = file_get_contents($_FILES['photo']['tmp_name']);
+        $format = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
     } else {
-        $photo = file_get_contents($photodefault); 
+        // Utiliser l'image par défaut
+        $photoContent = file_get_contents($defaultImagePath);
+        $format = pathinfo($defaultImagePath, PATHINFO_EXTENSION);
     }
-    
-    
+
+    // Insertion dans la base de données
     $sql = "INSERT INTO User (photo, username, prenom, nom, email, password, created_at, updated_at) 
             VALUES (:photo, :username, :prenom, :nom, :email, :password, NOW(), NOW())";
     $stmt = $pdo->prepare($sql);
     $result = $stmt->execute([
-        'photo' => $photo,
+        'photo' => $photoContent,
         'username' => $username,
         'prenom' => $prenom,
         'nom' => $nom,
@@ -33,8 +40,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ]);
 
     if ($result) {
+        // Récupérer l'ID de l'utilisateur inséré
+        $userId = $pdo->lastInsertId(); // Récupère l'ID de l'utilisateur inséré
+
+        // Créer la session pour l'utilisateur
+        $_SESSION['user_id'] = $userId;
+        $_SESSION['username'] = $username;  // Tu peux aussi stocker d'autres informations
+
         $message = 'Inscription réussie!';
-        header('Location: home.php');
+        header('Location: home.php');  // Rediriger vers la page d'accueil
         exit;
     } else {
         $message = 'Erreur lors de l\'inscription.';

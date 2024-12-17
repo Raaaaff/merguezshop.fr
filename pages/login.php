@@ -1,6 +1,14 @@
 <?php
 include("config.php");
 
+session_start();  
+
+// Si l'utilisateur est déjà connecté, on le redirige vers la page d'accueil
+if (isset($_SESSION['user_id'])) {
+    header('Location: home.php');
+    exit;
+}
+
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -8,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $login = $_POST['login'];  
     $password = $_POST['password'];
 
-
+    // Rechercher l'utilisateur avec le login (email ou nom d'utilisateur)
     $sql = "SELECT * FROM User WHERE email = :login OR username = :login";
     $stmt = $pdo->prepare($sql);
     $stmt->execute(['login' => $login]);
@@ -18,11 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($user) {
         
         if (password_verify($password, $user['password'])) {
-            session_start();
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['prenom'] = $user['prenom'];
-
+            
+            $_SESSION['user_id'] = $user['ID'];
+            $_SESSION['username'] = $user['username'];      
             header('Location: home.php');
             exit;
         } else {
