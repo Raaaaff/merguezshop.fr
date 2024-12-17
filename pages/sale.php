@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nom = $_POST['nom'];
     $description = $_POST['description'];
     $prix = $_POST['prix'];
-    $photo = $_FILES['photo']['name'];
+    $photo = $_FILES['photos']['name'];
     $quantite = $_POST['quantite'];
     $author_ID = 1; 
 
@@ -33,8 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // Si aucune photo n'est envoyée
         $photos = [];
-    }
-    
+    }    
 
     // Vérifie qu'il y a au maximum 4 photos
     if (count($photos) > 4) {
