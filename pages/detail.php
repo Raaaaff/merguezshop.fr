@@ -1,12 +1,16 @@
 <?php
     // Inclure la connexion à la base de données
     include('config.php');
+    
+    if (!isset($_SESSION['user_id'])) {
+        header('Location: login.php');
+        exit;
+    };
 
     if (isset($_GET['id'])) {
         $article_id = intval($_GET['id']); // Convertir l'ID en entier pour éviter les problèmes de sécurité
     } else {
-        
-        echo "ID d'article non défini";
+        header('Location: login.php');
         exit;
     }
 
