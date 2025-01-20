@@ -1,13 +1,17 @@
+
 <?php
 include("config.php");
 
-session_start();  
+session_start();
 
-// Si l'utilisateur est déjà connecté, on le redirige vers la page d'accueil
 if (isset($_SESSION['user_id'])) {
-    header('Location: home.php');
-    exit;
+    // Ajoutez un contrôle pour vérifier si la session a une valeur correcte.
+    if (!empty($_SESSION['user_id'])) {
+        header('Location: home.php');
+        exit;
+    }
 }
+
 
 $message = '';
 

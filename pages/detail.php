@@ -1,37 +1,39 @@
 <?php
-    // Inclure la connexion à la base de données
-    include('config.php');
-    
-    if (!isset($_SESSION['user_id'])) {
-        header('Location: login.php');
-        exit;
-    };
+// Inclure la connexion à la base de données
+include('config.php');
+session_start();
 
-    if (isset($_GET['id'])) {
-        $article_id = intval($_GET['id']); // Convertir l'ID en entier pour éviter les problèmes de sécurité
-    } else {
-        header('Location: login.php');
-        exit;
-    }
+// Vérifier si l'article ID est passé en paramètre
+if (isset($_GET['id'])) {
+    $article_id = $_GET['id'];
 
-    // Récupérer les informations de l'article depuis la base de données
-    $query = $pdo->prepare("SELECT * FROM Article WHERE ID = :id");
+    // Récupérer les détails de l'article depuis la base de données
+    $query = $pdo->prepare("SELECT * FROM Article WHERE id = :id");
     $query->execute(['id' => $article_id]);
     $article = $query->fetch(PDO::FETCH_ASSOC);
 
-    // Récupérer les photos supplémentaires depuis la base de données
-    $query_photos = $pdo->prepare("SELECT * FROM Photos WHERE article_ID = :id");
-    $query_photos->execute(['id' => $article_id]);
-    $photos = $query_photos->fetchAll(PDO::FETCH_ASSOC);
-?>
+    if (!$article) {
+        // Si l'article n'existe pas
+        echo "Article non trouvé.";
+        exit;
+    }
 
+    // Récupérer les images supplémentaires de l'article (entre 1 et 4 images)
+    $imageQuery = $pdo->prepare("SELECT * FROM Photos WHERE article_ID = :article_ID LIMIT 4");
+    $imageQuery->execute(['article_ID' => $article_id]);
+    $images = $imageQuery->fetchAll(PDO::FETCH_ASSOC);
+} else {
+    echo "Aucun article sélectionné.";
+    exit;
+}
+?>
 
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Détails de l'article - MerguezShop</title>
+    <title>Détail de l'article</title>
     <link rel="stylesheet" href="css/details.css">
 </head>
 <body>
@@ -41,6 +43,10 @@
             <div class="logo">
                 <h1>MerguezShop</h1>
             </div>
+            <form class="search-bar" action="search.php" method="GET">
+                <input type="text" name="query" placeholder="Rechercher un produit..." required>
+                <button type="submit">Rechercher</button>
+            </form>
             <nav>
                 <ul>
                     <li><a href="home.php">Accueil</a></li>
@@ -54,35 +60,53 @@
 
     <!-- Contenu principal -->
     <main>
-        <?php if ($article): ?>
-            <div class="product-details">
-                <div class="product-images">
-                    <img src="data:image/jpeg;base64,<?= base64_encode($article['image']) ?>" alt="Image principale de l'article" class="main-image">
+        <div class="article-details-container">
+            <!-- Affichage de l'image principale -->
+            <?php
+                $imageData = $article['image'] ?? null;
+                if ($imageData && strlen($imageData) > 100) {
+                    $imageBase64 = base64_encode($imageData);
+                    $imageSrc = "data:image/jpeg;base64," . $imageBase64;
+                } elseif (!empty($article['imageSrc'])) {
+                    $imageSrc = htmlspecialchars($article['imageSrc']);
+                } else {
+                    $imageSrc = "../img/no_found.jpg";
+                }
+            ?>
+            <div class="article-image">
+                <img src="<?= htmlspecialchars($imageSrc) ?>" alt="Image de l'article">
+            </div>
+
+            <!-- Détails de l'article -->
+            <div class="article-info">
+                <h2 class="article-title"><?= htmlspecialchars($article['nom']) ?></h2>
+                <p class="article-description"><?= htmlspecialchars($article['description']) ?></p>
+                <p class="article-price"><?= htmlspecialchars($article['prix']) ?> &euro;</p>
+
+                <!-- Ajouter au panier -->
+                <form action="add_to_cart.php" method="POST">
+                    <input type="hidden" name="article_id" value="<?= $article['id'] ?>">
+                    <button type="submit" class="btn">Ajouter au panier</button>
+                </form>
+
+                <!-- Affichage des images supplémentaires -->
+                <div class="article-images-container">
                     <div class="additional-images">
-                        <?php foreach ($photos as $photo): ?>
-                            <img src="data:image/jpeg;base64,<?= base64_encode($photo['image']) ?>" alt="Image de l'article" class="additional-image">
-                        <?php endforeach; ?>
+                        <?php
+                            foreach ($images as $image) {
+                                if (!empty($image['image']) && strlen($image['image']) > 100) {
+                                    $imageSrc = "data:image/jpeg;base64," . base64_encode($image['image']);
+                                } else {
+                                    $imageSrc = htmlspecialchars($image['imageSrc']);
+                                }
+                                echo '<img src="' . $imageSrc . '" class="additional-image" alt="Image supplémentaire">';
+                            }
+                        ?>
                     </div>
                 </div>
-                <div class="product-info">
-                    <h2><?= htmlspecialchars($article['nom']) ?></h2>
-                    <p class="description"><?= htmlspecialchars($article['description']) ?></p>
-                    <p class="price"><?= htmlspecialchars($article['prix']) ?> &euro;</p>
-                    <a href="#" class="btn">Ajouter au panier</a>
-                </div>
             </div>
-        <?php else: ?>
-            <p>Article non trouvé.</p>
-        <?php endif; ?>
+        </div>
     </main>
-    <script>
-        document.querySelectorAll('.additional-image').forEach(img => {
-            img.addEventListener('click', function() {
-                document.querySelector('.main-image').src = this.src;
-            });
-        });
-    </script>
-
 
     <!-- Pied de page -->
     <footer>

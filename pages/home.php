@@ -51,7 +51,7 @@ $articles = $query->fetchAll(PDO::FETCH_ASSOC);
     
     <div class="article-list"> <!-- Conteneur principal -->
         <?php foreach ($articles as $article): ?>
-            <a href="detail.php?id=<?= htmlspecialchars($article['ID']) ?>" class="article-item-link">
+            <a href="detail.php?id=<?= htmlspecialchars($article['id']) ?>" class="article-item-link">
                 <div class="article-item"> 
                     <?php
                         // Récupération de l'image depuis la base de données

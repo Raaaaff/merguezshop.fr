@@ -1,8 +1,8 @@
 <?php
-$host = '192.168.1.97';
+$host = '192.168.1.57';
 $dbname = 'merguezshop';
-$user = 'sqlcommuser';
-$password = 'GHU7L8jxrs4RBjsB';
+$user = 'merguezshop';
+$password = 'merguezshop';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;port=3306;dbname=$dbname;charset=$charset";
