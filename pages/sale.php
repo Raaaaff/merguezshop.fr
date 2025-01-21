@@ -2,11 +2,17 @@
 include("config.php");
 session_start(); // Démarrer la session
 
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
+
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nom = $_POST['nom'];
-    $description = $_POST['description'];
+    $description = $_POST['descri   ption'];
     $prix = $_POST['prix'];
     $quantite = $_POST['quantite'];
     $author_ID = $_SESSION['user_id']; 

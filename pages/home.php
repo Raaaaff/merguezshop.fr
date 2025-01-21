@@ -3,11 +3,6 @@
 include('config.php');
 
 session_start();
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
-
 
 // Récupérer les articles depuis la base de données
 $query = $pdo->query("SELECT * FROM Article");
