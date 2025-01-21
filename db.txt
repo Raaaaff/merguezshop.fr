@@ -1,0 +1,38 @@
+la forme de la base de donnée:
+
+table article:
+id : int
+nom : varchar
+prix : varchar
+image: longblob
+description : text
+publish_date : date
+author_ID : int
+
+Cart table:
+id : int
+user_id : int
+article_id : int
+quantite : int
+
+Photos table:
+id :int
+article_ID : int
+image : longblob
+table Stock:
+id : int
+article_ID : int
+quantite : int
+
+User table:
+id : int
+photo : longblob
+username: varchar
+prenom : varchar
+nom : varchar
+email : varchar
+password : varchar
+created_at : datetime
+updated_at : datetime
+admin : int
+solde : int

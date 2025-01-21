@@ -12,37 +12,55 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// Vérifier si une modification de quantité ou suppression est demandée
-if (isset($_POST['update'])) {
-    $article_id = $_POST['article_id'];
-    $quantite = $_POST['quantite'];
 
-    // Vérifier la quantité en stock
-    $stockQuery = $pdo->prepare("SELECT quantite FROM Stock WHERE article_ID = :article_id");
-    $stockQuery->execute(['article_id' => $article_id]);
-    $stock = $stockQuery->fetch(PDO::FETCH_ASSOC);
-
-    if ($quantite > $stock['quantite']) {
-        echo "<script>alert('Quantité demandée dépasse le stock disponible.');</script>";
-    } else {
-        // Mettre à jour la quantité dans le panier
-        $updateQuery = $pdo->prepare("UPDATE Cart SET quantite = :quantite WHERE user_id = :user_id AND article_id = :article_id");
-        $updateQuery->execute([
-            'quantite' => $quantite,
-            'user_id' => $user_id,
-            'article_id' => $article_id
-        ]);
+// Fonction pour récupérer la quantité maximale en stock
+function getMaxStock($article_id, $pdo) {
+    try {
+        $stockQuery = $pdo->prepare("SELECT quantite FROM Stock WHERE article_ID = :article_id");
+        $stockQuery->execute(['article_id' => $article_id]);
+        $stock = $stockQuery->fetch(PDO::FETCH_ASSOC);
+        return $stock ? (int)$stock['quantite'] : 0;
+    } catch (PDOException $e) {
+        // Gérer l'erreur (optionnel, pour déboguer uniquement)
+        error_log("Erreur dans getMaxStock : " . $e->getMessage());
+        return 0;
     }
 }
 
-if (isset($_POST['remove'])) {
-    $article_id = $_POST['article_id'];
-    // Supprimer l'article du panier
-    $removeQuery = $pdo->prepare("DELETE FROM Cart WHERE user_id = :user_id AND article_id = :article_id");
-    $removeQuery->execute([
-        'user_id' => $user_id,
-        'article_id' => $article_id
-    ]);
+
+// Vérifier si une modification ou une suppression est demandée
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $article_id = $_POST['article_id'] ?? null;
+
+    if (isset($_POST['update']) && $article_id) {
+        $quantite = (int)$_POST['quantite'];
+
+        // Vérifier la quantité en stock
+        $maxStock = getMaxStock($article_id, $pdo);
+        if ($quantite > $maxStock) {
+            echo "<script>alert('Quantité demandée dépasse le stock disponible.');</script>";
+        } elseif ($quantite < 1) {
+            echo "<script>alert('Quantité invalide.');</script>";
+        } else {
+            // Mettre à jour la quantité dans le panier
+            $updateQuery = $pdo->prepare("UPDATE Cart SET quantite = :quantite WHERE user_id = :user_id AND article_id = :article_id");
+            $updateQuery->execute([
+                'quantite' => $quantite,
+                'user_id' => $user_id,
+                'article_id' => $article_id
+            ]);
+        }
+    }
+
+    if (isset($_POST['remove']) && $article_id) {
+        // Supprimer l'article du panier
+        $removeQuery = $pdo->prepare("DELETE FROM Cart WHERE user_id = :user_id AND article_id = :article_id");
+        $removeQuery->execute([
+            'user_id' => $user_id,
+            'article_id' => $article_id
+        ]);
+        echo "<script>alert('Article supprimé du panier.');</script>";
+    }
 }
 
 // Requête pour récupérer les articles du panier de l'utilisateur
@@ -109,8 +127,8 @@ $cart_items = $query->fetchAll(PDO::FETCH_ASSOC);
                         ?>
                         <tr>
                             <td>
-                                <img src="data:image/jpeg;base64,<?= base64_encode($item['image']) ?>" alt="<?= $item['nom'] ?>" class="cart-image">
-                                <span><?= $item['nom'] ?></span>
+                                <img src="data:image/jpeg;base64,<?= base64_encode($item['image']) ?>" alt="<?= htmlspecialchars($item['nom']) ?>" class="cart-image">
+                                <span><?= htmlspecialchars($item['nom']) ?></span>
                             </td>
                             <td>
                                 <input type="number" name="quantite" value="<?= $item['quantite'] ?>" min="1" max="<?= getMaxStock($item['id'], $pdo) ?>" required>
@@ -131,6 +149,11 @@ $cart_items = $query->fetchAll(PDO::FETCH_ASSOC);
                     <h3>Total général : <?= number_format($total_general, 2) ?> €</h3>
                 </div>
             </form>
+        <div class="cart-actions">
+                <h3>Total général : <?= number_format($total_general, 2) ?> €</h3>
+                <button type="button" onclick="window.location.href='confirmation.php';">Confirmer la commande</button>
+        </div>
+
         <?php else: ?>
             <p>Votre panier est vide.</p>
         <?php endif; ?>
@@ -141,13 +164,3 @@ $cart_items = $query->fetchAll(PDO::FETCH_ASSOC);
     </footer>
 </body>
 </html>
-
-<?php
-// Fonction pour récupérer la quantité maximale en stock
-function getMaxStock($article_id, $pdo) {
-    $stockQuery = $pdo->prepare("SELECT quantite FROM Stock WHERE article_ID = :article_id");
-    $stockQuery->execute(['article_id' => $article_id]);
-    $stock = $stockQuery->fetch(PDO::FETCH_ASSOC);
-    return $stock ? $stock['quantite'] : 0;
-}
-?>

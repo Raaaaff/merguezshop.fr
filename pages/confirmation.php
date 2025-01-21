@@ -1,59 +1,65 @@
 <?php
-session_start();
-include('db_connection.php');
+// Inclure la connexion à la base de données
+include('config.php');
 
+session_start();
+
+// Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
 }
 
-$userId = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id'];
 
-// Récupérer les articles du panier
-$query = $pdo->prepare("SELECT Cart.id, Article.nom, Article.prix, Cart.quantite 
-                        FROM Cart 
-                        JOIN Article ON Cart.article_id = Article.id 
-                        WHERE Cart.user_id = ?");
-$query->execute([$userId]);
-$panier = $query->fetchAll(PDO::FETCH_ASSOC);
+// Requête pour récupérer les articles du panier
+$query = $pdo->prepare("
+    SELECT a.id, a.nom, a.prix, c.quantite, s.quantite AS stock
+    FROM Cart c
+    JOIN Article a ON c.article_id = a.id
+    JOIN Stock s ON a.id = s.article_ID
+    WHERE c.user_id = ?
+");
+$query->execute([$user_id]);
+$cart_items = $query->fetchAll(PDO::FETCH_ASSOC);
 
-// Calculer le total
-$total = 0;
-foreach ($panier as $article) {
-    $total += $article['prix'] * $article['quantite'];
+// Calcul du total du panier
+$total_general = 0;
+foreach ($cart_items as $item) {
+    $total_general += $item['prix'] * $item['quantite'];
 }
 
-// Vérifier le solde et vider le panier
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['valider'])) {
-    $adresse = $_POST['adresse'];
-    $userQuery = $pdo->prepare("SELECT solde FROM User WHERE id = ?");
-    $userQuery->execute([$userId]);
-    $solde = $userQuery->fetchColumn();
+// Récupérer le solde de l'utilisateur
+$userQuery = $pdo->prepare("SELECT solde FROM User WHERE id = ?");
+$userQuery->execute([$user_id]);
+$user = $userQuery->fetch(PDO::FETCH_ASSOC);
+$solde = $user['solde'];
 
-    if ($solde >= $total) {
-        // Mettre à jour le solde
+// Vérification du solde et validation de la commande
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($solde >= $total_general) {
+        // Déduction du solde
         $updateSolde = $pdo->prepare("UPDATE User SET solde = solde - ? WHERE id = ?");
-        $updateSolde->execute([$total, $userId]);
+        $updateSolde->execute([$total_general, $user_id]);
+
+        // Mise à jour des stocks
+        foreach ($cart_items as $item) {
+            $new_stock = $item['stock'] - $item['quantite'];
+            $updateStock = $pdo->prepare("UPDATE Stock SET quantite = ? WHERE article_ID = ?");
+            $updateStock->execute([$new_stock, $item['id']]);
+        }
 
         // Vider le panier
-        $deleteCart = $pdo->prepare("DELETE FROM Cart WHERE user_id = ?");
-        $deleteCart->execute([$userId]);
+        $clearCart = $pdo->prepare("DELETE FROM Cart WHERE user_id = ?");
+        $clearCart->execute([$user_id]);
 
-        // Générer une facture (simplifié)
-        $facture = "Facture pour la commande de " . date('Y-m-d H:i:s') . "\n";
-        foreach ($panier as $article) {
-            $facture .= $article['nom'] . " x " . $article['quantite'] . " - " . ($article['prix'] * $article['quantite']) . "€\n";
-        }
-        $facture .= "Total : " . $total . "€\nAdresse : " . $adresse . "\n";
-
-        file_put_contents("factures/facture_user_$userId.txt", $facture);
-
-        $message = "Commande validée avec succès. Votre facture a été générée.";
+        // Redirection vers une page de succès
+        header('Location: success.php');
+        exit;
     } else {
-        $message = "Solde insuffisant.";
+        $error = "Solde insuffisant pour effectuer cette commande.";
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -61,19 +67,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['valider'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirmation</title>
+    <title>Confirmation de commande</title>
+    <link rel="stylesheet" href="css/cart.css">
 </head>
 <body>
-    <h1>Confirmation de Commande</h1>
+    <header>
+        <h1>Confirmation de la commande</h1>
+    </header>
+    <main>
+        <h2>Résumé de votre commande</h2>
+        <ul>
+            <?php foreach ($cart_items as $item): ?>
+                <li>
+                    <?= htmlspecialchars($item['nom']) ?> - 
+                    Quantité : <?= $item['quantite'] ?> - 
+                    Total : <?= number_format($item['prix'] * $item['quantite'], 2) ?> €
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        <h3>Total général : <?= number_format($total_general, 2) ?> €</h3>
+        <h3>Votre solde : <?= number_format($solde, 2) ?> €</h3>
 
-    <form method="POST">
-        <label for="adresse">Adresse de facturation :</label>
-        <input type="text" name="adresse" id="adresse" required>
-        <button type="submit" name="valider">Valider la commande</button>
-    </form>
+        <?php if (isset($error)): ?>
+            <p style="color: red;"><?= htmlspecialchars($error) ?></p>
+        <?php endif; ?>
 
-    <?php if (isset($message)): ?>
-        <p><?= $message ?></p>
-    <?php endif; ?>
+        <form method="POST">
+            <button type="submit">Payer</button>
+        </form>
+        <a href="cart.php">Retour au panier</a>
+    </main>
 </body>
 </html>
