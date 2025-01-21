@@ -1,56 +1,76 @@
 <?php
-session_start();
-include('db_connection.php');
+// Inclure la connexion à la base de données
+include('config.php');
 
+session_start();
+
+// Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
 }
 
-$userId = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id'];
 
-// Récupérer les articles du panier
-$query = $pdo->prepare("SELECT Cart.id, Article.nom, Article.prix, Cart.quantite 
-                        FROM Cart 
-                        JOIN Article ON Cart.article_id = Article.id 
-                        WHERE Cart.user_id = ?");
-$query->execute([$userId]);
-$panier = $query->fetchAll(PDO::FETCH_ASSOC);
+// Récupérer les articles du panier de l'utilisateur
+$query = $pdo->prepare("
+    SELECT a.id, a.nom, a.prix, a.image, c.quantite 
+    FROM Cart c 
+    JOIN Article a ON c.article_id = a.id 
+    WHERE c.user_id = ?
+");
+$query->execute([$user_id]);
+$cart_items = $query->fetchAll(PDO::FETCH_ASSOC);
 
-// Calculer le total
-$total = 0;
-foreach ($panier as $article) {
-    $total += $article['prix'] * $article['quantite'];
+// Récupérer le solde de l'utilisateur
+$querySolde = $pdo->prepare("SELECT solde FROM User WHERE id = ?");
+$querySolde->execute([$user_id]);
+$user_data = $querySolde->fetch(PDO::FETCH_ASSOC);
+$solde_user = $user_data['solde'];
+
+// Calculer le total du panier
+$total_panier = 0;
+foreach ($cart_items as $item) {
+    $total_panier += $item['prix'] * $item['quantite'];
 }
 
-// Vérifier le solde et vider le panier
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['valider'])) {
-    $adresse = $_POST['adresse'];
-    $userQuery = $pdo->prepare("SELECT solde FROM User WHERE id = ?");
-    $userQuery->execute([$userId]);
-    $solde = $userQuery->fetchColumn();
+// Vérifier si l'utilisateur a suffisamment de solde pour passer la commande
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Vérifier que le solde est suffisant
+    if ($solde_user >= $total_panier) {
+        // Récupérer les informations de facturation
+        $adresse_facturation = $_POST['adresse_facturation'];
+        $code_postal = $_POST['code_postal'];
+        $ville = $_POST['ville'];
+        
+        // Mettre à jour le solde de l'utilisateur après la commande
+        $nouveau_solde = $solde_user - $total_panier;
+        $updateSoldeQuery = $pdo->prepare("UPDATE User SET solde = :solde WHERE id = :user_id");
+        $updateSoldeQuery->execute([
+            'solde' => $nouveau_solde,
+            'user_id' => $user_id
+        ]);
 
-    if ($solde >= $total) {
-        // Mettre à jour le solde
-        $updateSolde = $pdo->prepare("UPDATE User SET solde = solde - ? WHERE id = ?");
-        $updateSolde->execute([$total, $userId]);
+        // Créer une entrée de commande (facultatif, selon l'architecture du projet)
+        $insertCommandeQuery = $pdo->prepare("INSERT INTO Commandes (user_id, total, adresse_facturation, code_postal, ville) VALUES (:user_id, :total, :adresse_facturation, :code_postal, :ville)");
+        $insertCommandeQuery->execute([
+            'user_id' => $user_id,
+            'total' => $total_panier,
+            'adresse_facturation' => $adresse_facturation,
+            'code_postal' => $code_postal,
+            'ville' => $ville
+        ]);
 
-        // Vider le panier
-        $deleteCart = $pdo->prepare("DELETE FROM Cart WHERE user_id = ?");
-        $deleteCart->execute([$userId]);
+        // Vider le panier de l'utilisateur
+        $deletePanierQuery = $pdo->prepare("DELETE FROM Cart WHERE user_id = :user_id");
+        $deletePanierQuery->execute(['user_id' => $user_id]);
 
-        // Générer une facture (simplifié)
-        $facture = "Facture pour la commande de " . date('Y-m-d H:i:s') . "\n";
-        foreach ($panier as $article) {
-            $facture .= $article['nom'] . " x " . $article['quantite'] . " - " . ($article['prix'] * $article['quantite']) . "€\n";
-        }
-        $facture .= "Total : " . $total . "€\nAdresse : " . $adresse . "\n";
-
-        file_put_contents("factures/facture_user_$userId.txt", $facture);
-
-        $message = "Commande validée avec succès. Votre facture a été générée.";
+        // Générer une facture
+        $facture_id = $pdo->lastInsertId();
+        header("Location: facture.php?facture_id=$facture_id");
+        exit;
     } else {
-        $message = "Solde insuffisant.";
+        $message = "Vous n'avez pas suffisamment de solde pour passer cette commande.";
     }
 }
 
@@ -61,19 +81,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['valider'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirmation</title>
+    <title>Confirmation de Commande - MerguezShop</title>
+    <link rel="stylesheet" href="css/confirmation.css">
 </head>
 <body>
-    <h1>Confirmation de Commande</h1>
+    <header>
+        <div class="top-bar">
+            <div class="logo">
+                <h1>MerguezShop</h1>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="home.php">Accueil</a></li>
+                    <li><a href="sale.php">Vente</a></li>
+                    <li><a href="profile.php">Mon Profil</a></li>
+                    <li><a href="cart.php">🛒 Panier</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
 
-    <form method="POST">
-        <label for="adresse">Adresse de facturation :</label>
-        <input type="text" name="adresse" id="adresse" required>
-        <button type="submit" name="valider">Valider la commande</button>
-    </form>
+    <main>
+        <h2>Confirmation de Commande</h2>
 
-    <?php if (isset($message)): ?>
-        <p><?= $message ?></p>
-    <?php endif; ?>
+        <?php if (isset($message)): ?>
+            <p style="color: red;"><?= $message; ?></p>
+        <?php endif; ?>
+
+        <h3>Articles dans votre panier</h3>
+        <table class="cart-table">
+            <thead>
+                <tr>
+                    <th>Article</th>
+                    <th>Quantité</th>
+                    <th>Prix unitaire</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($cart_items as $item): ?>
+                <tr>
+                    <td><?= htmlspecialchars($item['nom']) ?></td>
+                    <td><?= $item['quantite'] ?></td>
+                    <td><?= number_format($item['prix'], 2) ?> €</td>
+                    <td><?= number_format($item['prix'] * $item['quantite'], 2) ?> €</td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <h3>Total à payer : <?= number_format($total_panier, 2) ?> €</h3>
+
+        <?php if ($solde_user >= $total_panier): ?>
+            <form action="confirmation.php" method="POST">
+                <h3>Informations de facturation</h3>
+                <label for="adresse_facturation">Adresse de facturation :</label>
+                <input type="text" id="adresse_facturation" name="adresse_facturation" required>
+
+                <label for="code_postal">Code Postal :</label>
+                <input type="text" id="code_postal" name="code_postal" required>
+
+                <label for="ville">Ville :</label>
+                <input type="text" id="ville" name="ville" required>
+
+                <button type="submit">Valider la commande</button>
+            </form>
+        <?php else: ?>
+            <p>Votre solde est insuffisant pour passer cette commande.</p>
+        <?php endif; ?>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 MerguezShop | Tous droits réservés</p>
+    </footer>
 </body>
 </html>
