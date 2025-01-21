@@ -44,12 +44,22 @@ if (isset($_POST['update_profile'])) {
     header("Location: profile.php");
     exit();
 }
+
+// Récupérer les articles de l'utilisateur
+$stmt = $pdo->prepare("SELECT * FROM Article WHERE author_ID = :user_id");
+$stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+$stmt->execute();
+$articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
 <html lang="fr">
-
-<style>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil - MerguezShop</title>
+    <link rel="stylesheet" href="css/home.css">
+    <style>
         input[type="text"],
         input[type="email"],
         input[type="number"] {
@@ -99,21 +109,65 @@ if (isset($_POST['update_profile'])) {
         input[type="submit"]:hover {
             background-color: #218838;
         }
-    </style>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profil - MerguezShop</title>
-    <link rel="stylesheet" href="css/home.css">
+        .articles-table {
+            width: 100%;
+            margin-top: 2rem;
+            border-collapse: collapse;
+        }
+
+        .articles-table th, .articles-table td {
+            border: 1px solid #ccc;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        .articles-table th {
+            background-color: #f4f4f4;
+        }
+
+        .articles-table td a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        .articles-table td a:hover {
+            text-decoration: underline;
+        }
+
+        .articles-table td button {
+            padding: 0.5rem 1rem;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .articles-table td button:hover {
+            background-color: #c82333;
+        }
+    </style>
 </head>
 <body>
     <!-- En-tête -->
     <header>
         <div class="top-bar">
             <div class="logo">
-                <h1>MerguezShop - Mon Profil</h1>
+                <h1>MerguezShop</h1>
             </div>
+            <form class="search-bar" action="search.php" method="GET">
+                <input type="text" name="query" placeholder="Rechercher un produit..." required>
+                <button type="submit">Rechercher</button>
+            </form>
+            <nav>
+                <ul>
+                    <li><a href="home.php">Accueil</a></li>
+                    <li><a href="sale.php">Vente</a></li>
+                    <li><a href="profile.php">Mon Profil</a></li>
+                    <li><a href="cart.php">🛒 Panier</a></li>
+                </ul>
+            </nav>
         </div>
     </header>
 
@@ -142,11 +196,39 @@ if (isset($_POST['update_profile'])) {
             </div>
             <input type="submit" name="update_profile" value="Mettre à jour">
         </form>
-    </main>
 
-    <!-- Pied de page -->
-    <footer>
-        <p>&copy; 2024 MerguezShop | Tous droits réservés</p>
-    </footer>
+        <h2>Vos articles</h2>
+        <table class="articles-table">
+            <thead>
+                <tr>
+                    <th>Nom de l'article</th>
+                    <th>Prix</th>
+                    <th>Date de publication</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (count($articles) > 0): ?>
+                    <?php foreach ($articles as $article): ?>
+                        <tr>
+                            <td><a href="detail.php?id=<?php echo $article['id']; ?>"><?php echo htmlspecialchars($article['nom']); ?></a></td>
+                            <td><?php echo number_format($article['prix'], 2, ',', ' '); ?> €</td>
+                            <td><?php echo date('d/m/Y', strtotime($article['publish_date'])); ?></td>
+                            <td>
+                                <form action="delete_article.php" method="POST" style="display:inline;">
+                                    <input type="hidden" name="article_id" value="<?php echo $article['id']; ?>">
+                                    <button type="submit">Supprimer</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="4">Aucun article trouvé.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </main>
 </body>
 </html>
