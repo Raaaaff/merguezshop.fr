@@ -8,9 +8,9 @@ Pour accéder à la base de données de **merguezshop.fr**, vous devez utiliser 
    Téléchargez et configurez le VPN fourni par l'administrateur du projet. Ce VPN est nécessaire pour établir une connexion sécurisée avec la base de données.
 
 2. **Accès à la Base de Données**  
-   Les identifiants de connexion (utilisateur, mot de passe, hôte, port) sont déjà configurés dans les fichiers de configuration PHP du projet, vous n'avez donc pas besoin de les ajouter manuellement. Ces informations sont sécurisées et incluses dans les fichiers suivants :  
+   Les identifiants de connexion (utilisateur, mot de passe, hôte, port) sont déjà configurés dans les fichiers de configuration PHP du projet, vous n'avez donc pas besoin de les ajouter manuellement. Ces informations sont incluses dans les fichiers suivants :  
    
-   - `config/database.php`
+   - `pages/config.php`
    
 3. **Lancer l'application**  
    Une fois connecté au VPN, vous pouvez lancer l'application PHP sans étapes supplémentaires. L'application se connectera automatiquement à la base de données grâce aux informations déjà configurées.
