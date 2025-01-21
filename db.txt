@@ -47,3 +47,9 @@ adresse_facturation : varchar
 code_postal : varchar
 ville :varchar
 date_commande : datetime
+
+favorites
+
+id : int
+user_id : int
+article_id : int
