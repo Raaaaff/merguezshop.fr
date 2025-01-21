@@ -78,6 +78,11 @@ $articles = $query->fetchAll(PDO::FETCH_ASSOC);
                         </p>
                         <p class="article-price"> <?= htmlspecialchars($article['prix']) ?> &euro; </p>
                         <span class="btn">Ajouter au panier</span>
+
+                         <!-- Icone pour ajouter ou retirer des favoris -->
+                        <a href="favorite.php?action=toggle&article_id=<?= htmlspecialchars($article['id']) ?>" class="favorite-btn">
+                            <span class="heart-icon">&#9829;</span>  <!-- Symbole du cœur -->
+                        </a>
                     </div>
                 </div>
             </a>
