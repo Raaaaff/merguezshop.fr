@@ -68,8 +68,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vente d'article</title>
+    <title>Vente d'article -MerguezShop</title>
     <link rel="stylesheet" href="css/vente.css">
+    <link rel="icon" type="image/jpeg" href="../img/icon.jpg">
 </head>
 <body>
     <!-- En-tête -->

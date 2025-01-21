@@ -16,6 +16,7 @@ $articles = $query->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accueil - MerguezShop</title>
     <link rel="stylesheet" href="css/home.css">
+    <link rel="icon" type="image/jpeg" href="../img/icon.jpg">
 </head>
 <body>
     <!-- En-tête -->
@@ -34,6 +35,7 @@ $articles = $query->fetchAll(PDO::FETCH_ASSOC);
                     <li><a href="sale.php">Vente</a></li>
                     <li><a href="profile.php">Mon Profil</a></li>
                     <li><a href="cart.php">🛒 Panier</a></li>
+                    <li><a href="users.php">Users</a></li>
                     <!-- Bouton de déconnexion -->
                     <li><a href="logout.php" class="logout-btn">Déconnexion</a></li>
                 </ul>

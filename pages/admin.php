@@ -78,6 +78,7 @@ $articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accueil - MerguezShop</title>
     <link rel="stylesheet" href="css/home.css">
+    <link rel="icon" type="image/jpeg" href="../img/icon.jpg">
 </head>
 <body>
     <!-- En-tête -->

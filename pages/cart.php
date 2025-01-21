@@ -140,6 +140,7 @@ foreach ($cart_items as $item) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panier - MerguezShop</title>
     <link rel="stylesheet" href="css/cart.css">
+    <link rel="icon" type="image/jpeg" href="../img/icon.jpg">
 </head>
 <body>
     <header>

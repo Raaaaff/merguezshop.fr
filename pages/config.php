@@ -1,4 +1,9 @@
 <?php
+
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/merguez_shop/');
+}
+
 $host = '192.168.1.57';
 $dbname = 'merguezshop';
 $user = 'merguezshop';

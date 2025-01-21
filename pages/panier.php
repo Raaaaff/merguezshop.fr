@@ -64,7 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['commander'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panier</title>
+    <title>Panier - MerguezShop</title>
+    <link rel="icon" type="image/jpeg" href="../img/icon.jpg">
 </head>
 <body>
     <h1>Votre Panier</h1>

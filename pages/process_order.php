@@ -118,8 +118,9 @@ if (isset($_SESSION['order_data'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirmation de Commande - MerguezShop</title>
+    <title>Order process - MerguezShop</title>
     <link rel="stylesheet" href="css/process_order.css">
+    <link rel="icon" type="image/jpeg" href="../img/icon.jpg">
 </head>
 <body>
     <h2>Merci pour votre commande !</h2>

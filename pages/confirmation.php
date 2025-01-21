@@ -59,8 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirmation de Commande - MerguezShop</title>
+    <title>Confirmation - MerguezShop</title>
     <link rel="stylesheet" href="css/confirmation.css">
+    <link rel="icon" type="image/jpeg" href="../img/icon.jpg">
 </head>
 <body>
     <!-- HTML pour afficher les articles du panier, etc... -->
