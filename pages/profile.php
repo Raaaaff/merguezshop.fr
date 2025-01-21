@@ -45,6 +45,53 @@ if (isset($_POST['update_profile'])) {
     exit();
 }
 
+// Gérer la mise à jour des articles
+if (isset($_POST['update_article'])) {
+    $article_id = $_POST['article_id'];
+    $nom_article = $_POST['nom_article'];
+    $prix_article = $_POST['prix_article'];
+    $description_article = $_POST['description_article'];
+
+    // Mettre à jour les informations de l'article dans la base de données
+    $stmt = $pdo->prepare("UPDATE Article SET nom = :nom, prix = :prix, description = :description WHERE id = :article_id AND author_ID = :user_id");
+    $stmt->bindParam(':nom', $nom_article);
+    $stmt->bindParam(':prix', $prix_article);
+    $stmt->bindParam(':description', $description_article);
+    $stmt->bindParam(':article_id', $article_id, PDO::PARAM_INT);
+    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+    $stmt->execute();
+
+    // Redirection pour éviter la soumission multiple
+    header("Location: profile.php");
+    exit();
+}
+
+
+// Gérer la suppression d'article
+if (isset($_POST['delete_article'])) {
+    $article_id = $_POST['article_id'];
+
+    // Supprimer les entrées dans la table Stock qui font référence à cet article
+    $stmt = $pdo->prepare("DELETE FROM Stock WHERE article_id = :article_id");
+    $stmt->bindParam(':article_id', $article_id, PDO::PARAM_INT);
+    $stmt->execute();
+
+    // Supprimer les entrées dans la table Photos qui font référence à cet article
+    $stmt = $pdo->prepare("DELETE FROM Photos WHERE article_id = :article_id");
+    $stmt->bindParam(':article_id', $article_id, PDO::PARAM_INT);
+    $stmt->execute();
+
+    // Supprimer l'article de la table Article
+    $stmt = $pdo->prepare("DELETE FROM Article WHERE id = :article_id AND author_ID = :user_id");
+    $stmt->bindParam(':article_id', $article_id, PDO::PARAM_INT);
+    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+    $stmt->execute();
+
+    // Rediriger après suppression
+    header("Location: profile.php");
+    exit();
+}
+
 // Récupérer les articles de l'utilisateur
 $stmt = $pdo->prepare("SELECT * FROM Article WHERE author_ID = :user_id");
 $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
@@ -215,16 +262,43 @@ $articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <td><?php echo number_format($article['prix'], 2, ',', ' '); ?> €</td>
                             <td><?php echo date('d/m/Y', strtotime($article['publish_date'])); ?></td>
                             <td>
-                                <form action="delete_article.php" method="POST" style="display:inline;">
-                                    <input type="hidden" name="article_id" value="<?php echo $article['id']; ?>">
-                                    <button type="submit">Supprimer</button>
-                                </form>
+                            <form action="profile.php" method="POST">
+    <input type="hidden" name="article_id" value="<?php echo $article['id']; ?>">
+    
+    <div>
+        <label for="nom_article_<?php echo $article['id']; ?>">Nom de l'article :</label>
+        <input type="text" id="nom_article_<?php echo $article['id']; ?>" name="nom_article" value="<?php echo htmlspecialchars($article['nom']); ?>">
+    </div>
+    
+    <div>
+        <label for="prix_article_<?php echo $article['id']; ?>">Prix :</label>
+        <input type="number" id="prix_article_<?php echo $article['id']; ?>" name="prix_article" value="<?php echo htmlspecialchars($article['prix']); ?>" step="0.01">
+    </div>
+    
+    <div>
+        <label for="description_article_<?php echo $article['id']; ?>">Description :</label>
+        <textarea id="description_article_<?php echo $article['id']; ?>" name="description_article"><?php echo htmlspecialchars($article['description']); ?></textarea>
+    </div>
+
+    <div style="margin-top: 1rem;">
+        <button type="submit" name="update_article" style="background-color: #28a745; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">
+            Mettre à jour
+        </button>
+        
+        <button type="submit" name="delete_article" style="background-color: #dc3545; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet article ?');">
+            Supprimer
+        </button>
+    </div>
+</form>
+
+
+
                             </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="4">Aucun article trouvé.</td>
+                        <td colspan="4">Vous n'avez publié aucun article pour le moment.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
