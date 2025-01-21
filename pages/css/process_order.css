@@ -1,0 +1,106 @@
+/* Général */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+    color: #333;
+}
+
+/* Conteneur principal */
+.container {
+    width: 80%;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Titre principal */
+h2 {
+    text-align: center;
+    font-size: 24px;
+    margin-top: 40px;
+    color: #ff5722;
+}
+
+/* Informations de commande */
+p {
+    font-size: 16px;
+    margin: 10px 0;
+}
+
+strong {
+    font-weight: bold;
+}
+
+/* Lien de téléchargement */
+a {
+    color: #ff5722;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a:hover {
+    color: #e64a19;
+    text-decoration: underline;
+}
+
+/* Bouton retour à l'accueil */
+a[href="index.php"] {
+    display: block;
+    text-align: center;
+    background-color: #ff5722;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-top: 20px;
+    transition: background-color 0.3s;
+}
+
+a[href="index.php"]:hover {
+    background-color: #e64a19;
+}
+
+/* Structure du tableau des détails de commande */
+table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background-color: #ff5722;
+    color: white;
+}
+
+td {
+    background-color: white;
+}
+
+/* Mise en forme des totaux */
+td, th {
+    font-size: 14px;
+}
+
+td {
+    color: #333;
+}
+
+.total {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ff5722;
+    text-align: right;
+    padding-top: 10px;
+}
