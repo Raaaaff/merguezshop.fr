@@ -12,20 +12,51 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-
 // Fonction pour récupérer la quantité maximale en stock
 function getMaxStock($article_id, $pdo) {
     try {
         $stockQuery = $pdo->prepare("SELECT quantite FROM Stock WHERE article_ID = :article_id");
         $stockQuery->execute(['article_id' => $article_id]);
         $stock = $stockQuery->fetch(PDO::FETCH_ASSOC);
-        return $stock ? (int)$stock['quantite'] : 0;
+        
+        if ($stock === false) {
+            // Si la requête échoue ou retourne false, loggez une erreur
+            error_log("Aucun stock trouvé pour l'article avec l'ID : " . $article_id);
+            return 0; // Retourne 0 si aucun résultat trouvé
+        }
+        
+        return (int)$stock['quantite']; // Retourne la quantité trouvée, convertie en entier
     } catch (PDOException $e) {
         // Gérer l'erreur (optionnel, pour déboguer uniquement)
         error_log("Erreur dans getMaxStock : " . $e->getMessage());
-        return 0;
+        return 0; // Retourne 0 en cas d'erreur
     }
 }
+
+
+// Fonction pour récupérer le solde de l'utilisateur
+function getUserBalance($user_id, $pdo) {
+    try {
+        $balanceQuery = $pdo->prepare("SELECT solde FROM User WHERE id = :user_id");
+        $balanceQuery->execute(['user_id' => $user_id]);
+        $balance = $balanceQuery->fetch(PDO::FETCH_ASSOC);
+
+        if ($balance === false) {
+            echo '<script>console.log("Aucun solde trouvé pour l\'utilisateur avec l\'ID : ' . $user_id . '");</script>';
+            return 0; // Retourne 0 si aucun résultat trouvé
+        }
+
+        // Log pour vérifier la valeur récupérée
+        echo '<script>console.log("Solde récupéré pour l\'utilisateur ID ' . $user_id . ' : ' . $balance['solde'] . '");</script>';
+
+        return (float)$balance['solde']; // Retourne le solde de l'utilisateur
+    } catch (PDOException $e) {
+        // Log d'erreur
+        echo '<script>console.log("Erreur dans getUserBalance : ' . $e->getMessage() . '");</script>';
+        return 0; // Retourne 0 en cas d'erreur
+    }
+}
+
 
 
 // Vérifier si une modification ou une suppression est demandée
@@ -72,6 +103,9 @@ $query = $pdo->prepare("
 ");
 $query->execute([$user_id]);
 $cart_items = $query->fetchAll(PDO::FETCH_ASSOC);
+
+// Récupérer le solde de l'utilisateur
+$user_balance = getUserBalance($user_id, $pdo);
 ?>
 
 <!DOCTYPE html>
@@ -106,6 +140,10 @@ $cart_items = $query->fetchAll(PDO::FETCH_ASSOC);
     <main>
         <h2>Panier</h2>
 
+        <div class="user-balance">
+            <p>Votre solde actuel : <?= number_format($user_balance, 2) ?> €</p>
+        </div>
+
         <?php if (count($cart_items) > 0): ?>
             <form action="cart.php" method="POST">
                 <table class="cart-table">
@@ -122,6 +160,14 @@ $cart_items = $query->fetchAll(PDO::FETCH_ASSOC);
                         <?php
                         $total_general = 0;
                         foreach ($cart_items as $item):
+                            $maxStock = getMaxStock($item['id'], $pdo);
+
+                            if ($maxStock === 0) {
+                                $is_out_of_stock = true;
+                            } else {
+                                $is_out_of_stock = false;
+                            }
+
                             $total_article = $item['prix'] * $item['quantite'];
                             $total_general += $total_article;
                         ?>
@@ -131,12 +177,18 @@ $cart_items = $query->fetchAll(PDO::FETCH_ASSOC);
                                 <span><?= htmlspecialchars($item['nom']) ?></span>
                             </td>
                             <td>
-                                <input type="number" name="quantite" value="<?= $item['quantite'] ?>" min="1" max="<?= getMaxStock($item['id'], $pdo) ?>" required>
+                                <?php if ($is_out_of_stock): ?>
+                                    <span>Hors stock</span>
+                                <?php else: ?>
+                                    <input type="number" name="quantite" value="<?= $item['quantite'] ?>" min="1" max="<?= $maxStock ?>" required>
+                                <?php endif; ?>
                             </td>
                             <td><?= number_format($item['prix'], 2) ?> €</td>
                             <td><?= number_format($total_article, 2) ?> €</td>
                             <td>
-                                <button type="submit" name="update" value="true">Mettre à jour</button>
+                                <?php if (!$is_out_of_stock): ?>
+                                    <button type="submit" name="update" value="true">Mettre à jour</button>
+                                <?php endif; ?>
                                 <button type="submit" name="remove" value="true">Supprimer</button>
                                 <input type="hidden" name="article_id" value="<?= $item['id'] ?>">
                             </td>
@@ -147,13 +199,11 @@ $cart_items = $query->fetchAll(PDO::FETCH_ASSOC);
 
                 <div class="cart-total">
                     <h3>Total général : <?= number_format($total_general, 2) ?> €</h3>
+                    <button class="confirm-button" onclick="location.href='confirmation.php';">
+                        Confirmer la commande
+                    </button>
                 </div>
             </form>
-        <div class="cart-actions">
-                <h3>Total général : <?= number_format($total_general, 2) ?> €</h3>
-                <button type="button" onclick="window.location.href='confirmation.php';">Confirmer la commande</button>
-        </div>
-
         <?php else: ?>
             <p>Votre panier est vide.</p>
         <?php endif; ?>

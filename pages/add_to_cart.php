@@ -59,13 +59,9 @@ if (isset($_POST['article_id'])) {
                 $message = "Cet article est en rupture de stock.";
             }
         }
+        header("Location: detail.php?id=$article_id");
 
-        // Afficher un message à l'utilisateur
-        echo "<p>$message</p>";
-        
-        // Rediriger vers la page de détail après 2 secondes
-        echo "<meta http-equiv='refresh' content='2;url=detail.php?id=$article_id'>";
-
+    
         exit;
 
     } catch (Exception $e) {
