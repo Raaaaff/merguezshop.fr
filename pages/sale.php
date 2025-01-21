@@ -66,38 +66,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="css/vente.css">
 </head>
 <body>
-<div class="vente-container">
-    <h2>Mettre un article en vente</h2>
+    <!-- En-tête -->
+    <header>
+        <div class="top-bar">
+            <div class="logo">
+                <h1>MerguezShop</h1>
+            </div>
+            <form class="search-bar" action="search.php" method="GET">
+                <input type="text" name="query" placeholder="Rechercher un produit..." required>
+                <button type="submit">Rechercher</button>
+            </form>
+            <nav>
+                <ul>
+                    <li><a href="home.php">Accueil</a></li>
+                    <li><a href="sale.php">Vente</a></li>
+                    <li><a href="profile.php">Mon Profil</a></li>
+                    <li><a href="cart.php">🛒 Panier</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
 
-    <?php if (!empty($message)): ?>
-        <p class="message"><?= htmlspecialchars($message) ?></p>
-    <?php endif; ?>
+    <!-- Contenu principal -->
+    <div class="vente-container">
+        <h2>Mettre un article en vente</h2>
 
-    <form action="sale.php" method="post" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="nom">Nom de l'article :</label>
-            <input type="text" id="nom" name="nom" required>
-        </div>
-        <div class="form-group">
-            <label for="description">Description :</label>
-            <textarea id="description" name="description" required></textarea>
-        </div>
-        <div class="form-group">
-            <label for="prix">Prix :</label>
-            <input type="number" id="prix" name="prix" required step="0.01">
-        </div>
-        <div class="form-group">
-            <label for="photos">Photos (jusqu'à 4) :</label>
-            <input type="file" id="photos" name="photos[]" accept="image/*" multiple required>
-        </div>
-        <div class="form-group">
-            <label for="quantite">Quantité en stock :</label>
-            <input type="number" id="quantite" name="quantite" required>
-        </div>
-        <div class="form-group">
-            <input type="submit" value="Mettre en vente">
-        </div>
-    </form>
-</div>
+        <?php if (!empty($message)): ?>
+            <p class="message"><?= htmlspecialchars($message) ?></p>
+        <?php endif; ?>
+
+        <form action="sale.php" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="nom">Nom de l'article :</label>
+                <input type="text" id="nom" name="nom" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description :</label>
+                <textarea id="description" name="description" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="prix">Prix :</label>
+                <input type="number" id="prix" name="prix" required step="0.01">
+            </div>
+            <div class="form-group">
+                <label for="photos">Photos (jusqu'à 4) :</label>
+                <input type="file" id="photos" name="photos[]" accept="image/*" multiple required>
+            </div>
+            <div class="form-group">
+                <label for="quantite">Quantité en stock :</label>
+                <input type="number" id="quantite" name="quantite" required>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Mettre en vente">
+            </div>
+        </form>
+    </div>
+
+    <!-- Pied de page -->
+    <footer>
+        <p>&copy; 2024 MerguezShop | Tous droits réservés</p>
+    </footer>
 </body>
 </html>

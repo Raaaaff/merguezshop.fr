@@ -1,48 +1,44 @@
-
 <?php
 include("config.php");
 
 session_start();
 
-if (isset($_SESSION['user_id'])) {
-    // Ajoutez un contrôle pour vérifier si la session a une valeur correcte.
-    if (!empty($_SESSION['user_id'])) {
-        header('Location: home.php');
-        exit;
-    }
-}
-
-
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    $login = $_POST['login'];  
+    $login = trim($_POST['login']);  // Nettoyage des entrées utilisateur
     $password = $_POST['password'];
 
-    // Rechercher l'utilisateur avec le login (email ou nom d'utilisateur)
-    $sql = "SELECT * FROM User WHERE email = :login OR username = :login";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute(['login' => $login]);
+    if (!empty($login) && !empty($password)) {
+        // Rechercher l'utilisateur via l'email ou le nom d'utilisateur
+        $sql = "SELECT * FROM User WHERE email = :login OR username = :login";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(['login' => $login]);
+        $user = $stmt->fetch();
 
-    $user = $stmt->fetch();
+        if ($user) {
+            // Vérification du mot de passe
+            if (password_verify($password, $user['password'])) {
+                // Initialiser la session utilisateur
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
 
-    if ($user) {
-        
-        if (password_verify($password, $user['password'])) {
-            
-            $_SESSION['user_id'] = $user['ID'];
-            $_SESSION['username'] = $user['username'];      
-            header('Location: home.php');
-            exit;
+                // Rediriger vers la page d'accueil après connexion réussie
+                header('Location: home.php');
+                exit;
+            } else {
+                $message = 'Mot de passe incorrect. Veuillez réessayer.';
+            }
         } else {
-            $message = 'Mot de passe incorrect.';
+            $message = 'Utilisateur non trouvé. Vérifiez vos informations de connexion.';
         }
     } else {
-        $message = 'Utilisateur non trouvé.';
+        $message = 'Veuillez remplir tous les champs.';
     }
 }
+
 ?>
+
 
 <!DOCTYPE html>
 <html lang="fr">

@@ -22,6 +22,12 @@ if (isset($_GET['id'])) {
     $imageQuery = $pdo->prepare("SELECT * FROM Photos WHERE article_ID = :article_ID LIMIT 4");
     $imageQuery->execute(['article_ID' => $article_id]);
     $images = $imageQuery->fetchAll(PDO::FETCH_ASSOC);
+
+    // Vérifier la quantité en stock
+    $stockQuery = $pdo->prepare("SELECT quantite FROM Stock WHERE article_ID = :article_ID");
+    $stockQuery->execute(['article_ID' => $article_id]);
+    $stock = $stockQuery->fetch(PDO::FETCH_ASSOC);
+    $quantite_disponible = $stock ? $stock['quantite'] : 0;
 } else {
     echo "Aucun article sélectionné.";
     exit;
@@ -83,11 +89,20 @@ if (isset($_GET['id'])) {
                 <p class="article-description"><?= htmlspecialchars($article['description']) ?></p>
                 <p class="article-price"><?= htmlspecialchars($article['prix']) ?> &euro;</p>
 
+                <!-- Affichage de la quantité en stock -->
+                <p class="article-quantity">
+                    Quantité disponible : <?= $quantite_disponible ?> article(s)
+                </p>
+
                 <!-- Ajouter au panier -->
-                <form action="add_to_cart.php" method="POST">
-                    <input type="hidden" name="article_id" value="<?= $article['id'] ?>">
-                    <button type="submit" class="btn">Ajouter au panier</button>
-                </form>
+                <?php if ($quantite_disponible > 0): ?>
+                    <form action="add_to_cart.php" method="POST">
+                        <input type="hidden" name="article_id" value="<?= $article['id'] ?>">
+                        <button type="submit" class="btn">Ajouter au panier</button>
+                    </form>
+                <?php else: ?>
+                    <button class="btn" disabled>Rupture de stock</button>
+                <?php endif; ?>
 
                 <!-- Affichage des images supplémentaires -->
                 <div class="article-images-container">

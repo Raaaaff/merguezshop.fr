@@ -69,78 +69,33 @@ nav ul li a {
     cursor: pointer;
     border-radius: 0 4px 4px 0;
 }
-/* Formulaire de vente */
-.vente-container {
+
+/* Tableau du panier */
+.cart-table {
+    width: 100%;
     max-width: 800px;
     margin: 20px auto;
-    padding: 20px;
-    background-color: white;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-collapse: collapse;
 }
 
-h2 {
-    text-align: center;
-    font-size: 24px;
-    margin-bottom: 20px;
-    color: #333;
-}
-
-.message {
-    background-color: #e64a19;
-    color: white;
-    padding: 10px;
-    text-align: center;
-    margin-bottom: 20px;
-    border-radius: 4px;
-}
-
-form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-label {
-    font-weight: bold;
-    font-size: 16px;
-}
-
-input[type="text"],
-input[type="number"],
-textarea,
-input[type="file"] {
+.cart-table th, .cart-table td {
     padding: 10px;
     border: 1px solid #ddd;
+    text-align: center;
+}
+
+.cart-image {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
     border-radius: 4px;
-    font-size: 16px;
 }
 
-textarea {
-    resize: vertical;
-}
-
-input[type="submit"] {
-    background-color: #ff5722;
-    color: white;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
-
-input[type="submit"]:hover {
-    background-color: #e64a19;
+/* Total */
+.cart-total {
+    text-align: right;
+    margin: 20px auto;
+    max-width: 800px;
 }
 
 /* Pied de page */
