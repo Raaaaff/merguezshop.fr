@@ -12,7 +12,7 @@ $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nom = $_POST['nom'];
-    $description = $_POST['descri   ption'];
+    $description = $_POST['description'];
     $prix = $_POST['prix'];
     $quantite = $_POST['quantite'];
     $author_ID = $_SESSION['user_id']; 

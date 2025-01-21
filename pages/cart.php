@@ -15,24 +15,19 @@ $user_id = $_SESSION['user_id'];
 // Fonction pour récupérer la quantité maximale en stock
 function getMaxStock($article_id, $pdo) {
     try {
-        $stockQuery = $pdo->prepare("SELECT quantite FROM Stock WHERE article_ID = :article_id");
-        $stockQuery->execute(['article_id' => $article_id]);
+        $stockQuery = $pdo->prepare("SELECT quantite FROM Stock WHERE article_ID = :article_ID");
+        $stockQuery->execute(['article_ID' => $article_id]);
         $stock = $stockQuery->fetch(PDO::FETCH_ASSOC);
         
         if ($stock === false) {
-            // Si la requête échoue ou retourne false, loggez une erreur
-            error_log("Aucun stock trouvé pour l'article avec l'ID : " . $article_id);
-            return 0; // Retourne 0 si aucun résultat trouvé
+            return 0; 
         }
         
-        return (int)$stock['quantite']; // Retourne la quantité trouvée, convertie en entier
+        return (int)$stock['quantite']; 
     } catch (PDOException $e) {
-        // Gérer l'erreur (optionnel, pour déboguer uniquement)
-        error_log("Erreur dans getMaxStock : " . $e->getMessage());
-        return 0; // Retourne 0 en cas d'erreur
+        return 0; 
     }
 }
-
 
 // Fonction pour récupérer le solde de l'utilisateur
 function getUserBalance($user_id, $pdo) {
@@ -43,45 +38,19 @@ function getUserBalance($user_id, $pdo) {
 
         if ($balance === false) {
             echo '<script>console.log("Aucun solde trouvé pour l\'utilisateur avec l\'ID : ' . $user_id . '");</script>';
-            return 0; // Retourne 0 si aucun résultat trouvé
+            return 0;
         }
 
-        // Log pour vérifier la valeur récupérée
-        echo '<script>console.log("Solde récupéré pour l\'utilisateur ID ' . $user_id . ' : ' . $balance['solde'] . '");</script>';
-
-        return (float)$balance['solde']; // Retourne le solde de l'utilisateur
+        return (float)$balance['solde']; 
     } catch (PDOException $e) {
-        // Log d'erreur
         echo '<script>console.log("Erreur dans getUserBalance : ' . $e->getMessage() . '");</script>';
         return 0; // Retourne 0 en cas d'erreur
     }
 }
 
-
-
-// Vérifier si une modification ou une suppression est demandée
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $article_id = $_POST['article_id'] ?? null;
-
-    if (isset($_POST['update']) && $article_id) {
-        $quantite = (int)$_POST['quantite'];
-
-        // Vérifier la quantité en stock
-        $maxStock = getMaxStock($article_id, $pdo);
-        if ($quantite > $maxStock) {
-            echo "<script>alert('Quantité demandée dépasse le stock disponible.');</script>";
-        } elseif ($quantite < 1) {
-            echo "<script>alert('Quantité invalide.');</script>";
-        } else {
-            // Mettre à jour la quantité dans le panier
-            $updateQuery = $pdo->prepare("UPDATE Cart SET quantite = :quantite WHERE user_id = :user_id AND article_id = :article_id");
-            $updateQuery->execute([
-                'quantite' => $quantite,
-                'user_id' => $user_id,
-                'article_id' => $article_id
-            ]);
-        }
-    }
+    $new_quantities = $_POST['quantite'] ?? null; // Récupérer les quantités du tableau associatif
 
     if (isset($_POST['remove']) && $article_id) {
         // Supprimer l'article du panier
@@ -92,7 +61,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
         echo "<script>alert('Article supprimé du panier.');</script>";
     }
+
+    if ($new_quantities) {
+        foreach ($new_quantities as $article_id => $new_quantity) {
+            if ($article_id) {
+                // Vérifier la quantité demandée et la quantité en stock
+                $maxStock = getMaxStock($article_id, $pdo);
+                if ($new_quantity > $maxStock) {
+                    echo "<script>alert('Quantité demandée pour l\'article ID $article_id dépasse le stock disponible.');</script>";
+                } else {
+                    // Mettre à jour la quantité dans le panier
+                    $updateQuantityQuery = $pdo->prepare("UPDATE Cart SET quantite = :quantite WHERE user_id = :user_id AND article_id = :article_id");
+                    $updateQuantityQuery->execute([
+                        'quantite' => $new_quantity,
+                        'user_id' => $user_id,
+                        'article_id' => $article_id
+                    ]);
+                }
+            }
+        }
+    }
+
+    // Vérifier la commande
+    if (isset($_POST['confirm_order'])) {
+        // Vérification de la commande
+        $total_general = 0;
+        $cart_items = [];
+        $query = $pdo->prepare("
+            SELECT a.id, a.nom, a.prix, a.image, c.quantite 
+            FROM Cart c 
+            JOIN Article a ON c.article_id = a.id 
+            WHERE c.user_id = ?
+        ");
+        $query->execute([$user_id]);
+        $cart_items = $query->fetchAll(PDO::FETCH_ASSOC);
+
+        // Calcul du total général du panier
+        foreach ($cart_items as $item) {
+            $total_general += $item['prix'] * $item['quantite'];
+        }
+
+        $user_balance = getUserBalance($user_id, $pdo);
+
+        if ($user_balance >= $total_general) {
+            echo "<script>alert('Commande confirmée avec succès.'); window.location = 'confirmation.php';</script>";
+        } else {
+            echo "<script>alert('Vous n\'avez pas assez de solde pour passer cette commande.');</script>";
+        }
+    }
 }
+
+
 
 // Requête pour récupérer les articles du panier de l'utilisateur
 $query = $pdo->prepare("
@@ -106,6 +125,12 @@ $cart_items = $query->fetchAll(PDO::FETCH_ASSOC);
 
 // Récupérer le solde de l'utilisateur
 $user_balance = getUserBalance($user_id, $pdo);
+
+// Calcul du total général
+$total_general = 0;
+foreach ($cart_items as $item) {
+    $total_general += $item['prix'] * $item['quantite'];
+}
 ?>
 
 <!DOCTYPE html>
@@ -158,39 +183,25 @@ $user_balance = getUserBalance($user_id, $pdo);
                     </thead>
                     <tbody>
                         <?php
-                        $total_general = 0;
                         foreach ($cart_items as $item):
                             $maxStock = getMaxStock($item['id'], $pdo);
-
-                            if ($maxStock === 0) {
-                                $is_out_of_stock = true;
-                            } else {
-                                $is_out_of_stock = false;
-                            }
-
                             $total_article = $item['prix'] * $item['quantite'];
-                            $total_general += $total_article;
-                        ?>
+                            ?>
                         <tr>
                             <td>
                                 <img src="data:image/jpeg;base64,<?= base64_encode($item['image']) ?>" alt="<?= htmlspecialchars($item['nom']) ?>" class="cart-image">
                                 <span><?= htmlspecialchars($item['nom']) ?></span>
                             </td>
                             <td>
-                                <?php if ($is_out_of_stock): ?>
-                                    <span>Hors stock</span>
-                                <?php else: ?>
-                                    <input type="number" name="quantite" value="<?= $item['quantite'] ?>" min="1" max="<?= $maxStock ?>" required>
-                                <?php endif; ?>
+                                <input type="number" name="quantite[<?= $item['id'] ?>]" value="<?= $item['quantite'] ?>" min="1" max="<?= $maxStock ?>" required>
                             </td>
+
                             <td><?= number_format($item['prix'], 2) ?> €</td>
                             <td><?= number_format($total_article, 2) ?> €</td>
                             <td>
-                                <?php if (!$is_out_of_stock): ?>
-                                    <button type="submit" name="update" value="true">Mettre à jour</button>
-                                <?php endif; ?>
                                 <button type="submit" name="remove" value="true">Supprimer</button>
                                 <input type="hidden" name="article_id" value="<?= $item['id'] ?>">
+                                <button type="submit">Mettre à jour</button>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -199,9 +210,11 @@ $user_balance = getUserBalance($user_id, $pdo);
 
                 <div class="cart-total">
                     <h3>Total général : <?= number_format($total_general, 2) ?> €</h3>
-                    <button class="confirm-button" onclick="location.href='confirmation.php';">
-                        Confirmer la commande
-                    </button>
+                    <?php if ($user_balance >= $total_general): ?>
+                        <button class="confirm-button" type="submit" name="confirm_order">Confirmer la commande</button>
+                    <?php else: ?>
+                        <p class="insufficient-funds">Vous n'avez pas assez de solde pour cette commande.</p>
+                    <?php endif; ?>
                 </div>
             </form>
         <?php else: ?>
@@ -210,7 +223,7 @@ $user_balance = getUserBalance($user_id, $pdo);
     </main>
 
     <footer>
-        <p>&copy; 2024 MerguezShop | Tous droits réservés</p>
+        <p>&copy; 2025 MerguezShop. Tous droits réservés.</p>
     </footer>
 </body>
 </html>

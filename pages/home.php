@@ -34,8 +34,11 @@ $articles = $query->fetchAll(PDO::FETCH_ASSOC);
                     <li><a href="sale.php">Vente</a></li>
                     <li><a href="profile.php">Mon Profil</a></li>
                     <li><a href="cart.php">🛒 Panier</a></li>
+                    <!-- Bouton de déconnexion -->
+                    <li><a href="logout.php" class="logout-btn">Déconnexion</a></li>
                 </ul>
             </nav>
+
         </div>
     </header>
 
