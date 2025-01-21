@@ -34,46 +34,24 @@ foreach ($cart_items as $item) {
     $total_panier += $item['prix'] * $item['quantite'];
 }
 
-// Vérifier si l'utilisateur a suffisamment de solde pour passer la commande
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Vérifier que le solde est suffisant
     if ($solde_user >= $total_panier) {
-        // Récupérer les informations de facturation
-        $adresse_facturation = $_POST['adresse_facturation'];
-        $code_postal = $_POST['code_postal'];
-        $ville = $_POST['ville'];
-        
-        // Mettre à jour le solde de l'utilisateur après la commande
-        $nouveau_solde = $solde_user - $total_panier;
-        $updateSoldeQuery = $pdo->prepare("UPDATE User SET solde = :solde WHERE id = :user_id");
-        $updateSoldeQuery->execute([
-            'solde' => $nouveau_solde,
-            'user_id' => $user_id
-        ]);
+        // Enregistrer la commande et les informations de facturation
+        $_SESSION['order_data'] = [
+            'total_panier' => $total_panier,
+            'adresse_facturation' => $_POST['adresse_facturation'],
+            'code_postal' => $_POST['code_postal'],
+            'ville' => $_POST['ville']
+        ];
 
-        // Créer une entrée de commande (facultatif, selon l'architecture du projet)
-        $insertCommandeQuery = $pdo->prepare("INSERT INTO Commandes (user_id, total, adresse_facturation, code_postal, ville) VALUES (:user_id, :total, :adresse_facturation, :code_postal, :ville)");
-        $insertCommandeQuery->execute([
-            'user_id' => $user_id,
-            'total' => $total_panier,
-            'adresse_facturation' => $adresse_facturation,
-            'code_postal' => $code_postal,
-            'ville' => $ville
-        ]);
-
-        // Vider le panier de l'utilisateur
-        $deletePanierQuery = $pdo->prepare("DELETE FROM Cart WHERE user_id = :user_id");
-        $deletePanierQuery->execute(['user_id' => $user_id]);
-
-        // Générer une facture
-        $facture_id = $pdo->lastInsertId();
-        header("Location: facture.php?facture_id=$facture_id");
+        // Rediriger vers le fichier de traitement de la commande
+        header('Location: process_order.php');
         exit;
     } else {
         $message = "Vous n'avez pas suffisamment de solde pour passer cette commande.";
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -85,76 +63,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="css/confirmation.css">
 </head>
 <body>
-    <header>
-        <div class="top-bar">
-            <div class="logo">
-                <h1>MerguezShop</h1>
-            </div>
-            <nav>
-                <ul>
-                    <li><a href="home.php">Accueil</a></li>
-                    <li><a href="sale.php">Vente</a></li>
-                    <li><a href="profile.php">Mon Profil</a></li>
-                    <li><a href="cart.php">🛒 Panier</a></li>
-                    <!-- Bouton de déconnexion -->
-                    <li><a href="logout.php" class="logout-btn">Déconnexion</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
+    <!-- HTML pour afficher les articles du panier, etc... -->
+    <h3>Total à payer : <?= number_format($total_panier, 2) ?> €</h3>
 
-    <main>
-        <h2>Confirmation de Commande</h2>
+    <?php if ($solde_user >= $total_panier): ?>
+        <form action="confirmation.php" method="POST">
+            <h3>Informations de facturation</h3>
+            <label for="adresse_facturation">Adresse de facturation :</label>
+            <input type="text" id="adresse_facturation" name="adresse_facturation" required>
 
-        <?php if (isset($message)): ?>
-            <p style="color: red;"><?= $message; ?></p>
-        <?php endif; ?>
+            <label for="code_postal">Code Postal :</label>
+            <input type="text" id="code_postal" name="code_postal" required>
 
-        <h3>Articles dans votre panier</h3>
-        <table class="cart-table">
-            <thead>
-                <tr>
-                    <th>Article</th>
-                    <th>Quantité</th>
-                    <th>Prix unitaire</th>
-                    <th>Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($cart_items as $item): ?>
-                <tr>
-                    <td><?= htmlspecialchars($item['nom']) ?></td>
-                    <td><?= $item['quantite'] ?></td>
-                    <td><?= number_format($item['prix'], 2) ?> €</td>
-                    <td><?= number_format($item['prix'] * $item['quantite'], 2) ?> €</td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+            <label for="ville">Ville :</label>
+            <input type="text" id="ville" name="ville" required>
 
-        <h3>Total à payer : <?= number_format($total_panier, 2) ?> €</h3>
-
-        <?php if ($solde_user >= $total_panier): ?>
-            <form action="confirmation.php" method="POST">
-                <h3>Informations de facturation</h3>
-                <label for="adresse_facturation">Adresse de facturation :</label>
-                <input type="text" id="adresse_facturation" name="adresse_facturation" required>
-
-                <label for="code_postal">Code Postal :</label>
-                <input type="text" id="code_postal" name="code_postal" required>
-
-                <label for="ville">Ville :</label>
-                <input type="text" id="ville" name="ville" required>
-
-                <button type="submit">Valider la commande</button>
-            </form>
-        <?php else: ?>
-            <p>Votre solde est insuffisant pour passer cette commande.</p>
-        <?php endif; ?>
-    </main>
-
-    <footer>
-        <p>&copy; 2024 MerguezShop | Tous droits réservés</p>
-    </footer>
+            <button type="submit">Valider la commande</button>
+        </form>
+    <?php else: ?>
+        <p>Votre solde est insuffisant pour passer cette commande.</p>
+    <?php endif; ?>
 </body>
 </html>

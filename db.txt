@@ -14,6 +14,7 @@ id : int
 user_id : int
 article_id : int
 quantite : int
+commande_id : int
 
 Photos table:
 id :int
@@ -36,3 +37,13 @@ created_at : datetime
 updated_at : datetime
 admin : int
 solde : int
+
+Commandes 
+
+id : int
+user_id : int
+total : decimal (10,20)
+adresse_facturation : varchar
+code_postal : varchar
+ville :varchar
+date_commande : datetime
